@@ -25,3 +25,27 @@ export const AiPipelineStatus = Object.freeze({
     FAILED: 'failed'
 })
 
+export const TokenType = Object.freeze({
+    ACCESS: 'access',
+    REFRESH: 'refresh'
+})
+
+export const UserAccountType = Object.freeze({
+    FREE: 'free',
+    PRO: 'pro'
+})
+
+export const LearningMode = Object.freeze({
+    STANDARD: 'Standard',
+    STRICT: 'Strict'
+})
+
+export const AuthProvider = Object.freeze({
+    GOOGLE: 'google',
+    EMAIL: 'email'
+})
+
+export const CourseSemester = Object.freeze({
+    FIRST: 'First',
+    SECOND: 'Second'
+})

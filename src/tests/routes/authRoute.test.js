@@ -5,10 +5,11 @@ import app from '#app.js'
 import env from '#config/env.js'
 import { userRepository, tokenRepository } from '#database/repositories/index.js'
 import { startOfNextDay } from '#lib/dateHelpers.js'
+import { TokenType } from '#constants/model.constant.js'
 
 const makeId = (prefix = 'user') => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
-async function createTestUserAndToken() {
+async function createTestUserAndTokens() {
     const userId = makeId('user')
     const tokenId = makeId('token')
     const user = {
@@ -27,8 +28,9 @@ async function createTestUserAndToken() {
         revoked: false
     })
 
-    const token = jwt.sign({ uid: userId, tokenId }, env.SECRET_KEY, { expiresIn: '1h' })
-    return { userId, tokenId, token, user }
+    const accessToken = jwt.sign({ uid: userId, tokenId, type: TokenType.ACCESS }, env.SECRET_KEY, { expiresIn: '1h' })
+    const refreshToken = jwt.sign({ uid: userId, tokenId, type: TokenType.REFRESH }, env.REFRESH_SECRET_KEY, { expiresIn: '7d' })
+    return { userId, tokenId, accessToken, refreshToken, token: accessToken, user }
 }
 
 describe('Auth Route (/api/auth)', () => {
@@ -36,6 +38,42 @@ describe('Auth Route (/api/auth)', () => {
         if (env.NODE_ENV !== 'development' && !env.FIREBASE_CLIENT_EMAIL) {
             throw new Error('To run tests, this project must be in development environment')
         }
+    })
+
+    describe('POST /api/auth/refresh', () => {
+        it('returns 400 when no refresh token is provided', async () => {
+            const res = await request(app).post('/api/auth/refresh').send({})
+            expect(res.status).toBe(400)
+            expect(res.body.success).toBe(false)
+        })
+
+        it('returns 401 when invalid refresh token is provided', async () => {
+            const res = await request(app)
+                .post('/api/auth/refresh')
+                .send({ refreshToken: 'invalid-token' })
+            expect(res.status).toBe(401)
+            expect(res.body.success).toBe(false)
+        })
+
+        it('returns 200 and a new access token when valid refresh token is provided', async () => {
+            const { refreshToken, userId } = await createTestUserAndTokens()
+
+            const res = await request(app)
+                .post('/api/auth/refresh')
+                .send({ refreshToken })
+
+            expect(res.status).toBe(200)
+            expect(res.body.success).toBe(true)
+            expect(res.body.data.accessToken).toBeDefined()
+
+            // Verify new access token works for authenticated requests
+            const profileRes = await request(app)
+                .get('/api/user/profile')
+                .set('Authorization', `Bearer ${res.body.data.accessToken}`)
+
+            expect(profileRes.status).toBe(200)
+            expect(profileRes.body.data.id).toBe(userId)
+        })
     })
 
     describe('POST /api/auth/logout', () => {
@@ -46,12 +84,12 @@ describe('Auth Route (/api/auth)', () => {
         })
 
         it('revokes token and returns 200 on logout, blocking subsequent requests', async () => {
-            const { token, userId, tokenId } = await createTestUserAndToken()
+            const { accessToken, userId, tokenId } = await createTestUserAndTokens()
 
             // 1. Logout
             const logoutRes = await request(app)
                 .post('/api/auth/logout')
-                .set('Authorization', `Bearer ${token}`)
+                .set('Authorization', `Bearer ${accessToken}`)
 
             expect(logoutRes.status).toBe(200)
             expect(logoutRes.body.success).toBe(true)
@@ -64,7 +102,7 @@ describe('Auth Route (/api/auth)', () => {
             // 3. Subsequent request with revoked token should fail (401)
             const subsequentRes = await request(app)
                 .get('/api/user/profile')
-                .set('Authorization', `Bearer ${token}`)
+                .set('Authorization', `Bearer ${accessToken}`)
 
             expect(subsequentRes.status).toBe(401)
             expect(subsequentRes.body.success).toBe(false)

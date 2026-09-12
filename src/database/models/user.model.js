@@ -1,21 +1,24 @@
 import { FieldValue } from '#database/firebase.js';
-
+import { LearningMode, UserAccountType, AuthProvider } from '#constants/model.constant.js'
 
 function defaultAvatarUrl (name) {
-    let editedName = name.replaceAll(' ', '')
+    let editedName = (name || 'user').replaceAll(' ', '')
     let url = `https://api.dicebear.com/9.x/avataaars/svg?seed=${editedName}`
     return url
 }
 
+/**
+ * @type {import('firebase-admin/firestore').FirestoreDataConverter<import('#types/user.type.js').User>}
+ */
 const userConverter = {
     toFirestore (user) {
         return {
-            id: user.id,
+            id: user.id ?? null,
             name: user.name,
             email: user.email,
             hashedPassword: user.hashedPassword ?? null,
             avatarUrl: user.avatarUrl ?? defaultAvatarUrl(user.name),
-            authProvider: user.authProvider,
+            authProvider: user.authProvider ?? AuthProvider.GOOGLE,
 
             level: user.level ?? null,
             department: user.department ?? null,
@@ -30,15 +33,20 @@ const userConverter = {
             storageUsedBytes: user.storageUsedBytes ?? 0,
             storageLimitBytes: user.storageLimitBytes ?? 1073741824, // 1GB default limit
             fcmTokens: user.fcmTokens ?? [],
-            learningMode: user.learningMode ?? 'Standard',
+            learningMode: user.learningMode ?? LearningMode.STANDARD,
             
-            aiCredits: user.aiCredits ?? 20,
-            aiCreditsResetsAt: user.aiCreditsResetsAt ?? null,
+            freeAiCredits: user.freeAiCredits ?? 20,
+            paidAiCredits: user.paidAiCredits ?? 0,
+            freeAiCreditsResetsAt: user.freeAiCreditsResetsAt ?? null,
             totalAiCreditsUsed: user.totalAiCreditsUsed ?? 0,
 
-            accountType: user.accountType ?? 'free',
+            accountType: user.accountType ?? UserAccountType.FREE,
             isActive: user.isActive ?? true,
             emailIsVerified: user.emailIsVerified ?? false,
+            emailVerificationToken: user.emailVerificationToken ?? null,
+            emailVerificationExpiresAt: user.emailVerificationExpiresAt ?? null,
+            passwordResetToken: user.passwordResetToken ?? null,
+            passwordResetExpiresAt: user.passwordResetExpiresAt ?? null,
             onBoardingCompleted: user.onBoardingCompleted ?? false,
 
             lastLoginAt: FieldValue.serverTimestamp(),
@@ -48,8 +56,9 @@ const userConverter = {
     },
 
     fromFirestore (snapshot) {
+        const data = snapshot.data()
         return {
-            ...snapshot.data(),
+            ...data,
             id: snapshot.id
         }
     }
@@ -64,9 +73,17 @@ const ALLOWED = [
 
     'aiCredits', 'aiCreditsResetsAt', 'totalAiCreditsUsed',
 
-    'accountType', 'isActive', 'emailIsVerified', 'onBoardingCompleted', 'lastLoginAt'
+    'accountType', 'isActive', 'emailIsVerified', 
+    'emailVerificationToken', 'emailVerificationExpiresAt', 
+    'passwordResetToken', 'passwordResetExpiresAt', 
+    'onBoardingCompleted', 'lastLoginAt'
 ]
 
+/**
+ * Shapes partial user update payload.
+ * @param {Partial<import('#types/user.type.js').User>} partial
+ * @returns {Record<string, any>}
+ */
 const userToUpdate = (partial) => {
     const shaped = {}
     for (const key of ALLOWED) if (partial[key] !== undefined) shaped[key] = partial[key]

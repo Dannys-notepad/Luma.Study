@@ -2,17 +2,21 @@ import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import passport from '#config/oauthStrategy.js'
 import env from '#config/env.js'
-import { Timestamp } from '#database/firebase.js'
 import { tokenRepository } from '#database/repositories/index.js'
 import authenticate from '#middlewares/auth.middleware.js'
+import { validateBody } from '#middlewares/validator.middleware.js'
 import AppError from '#lib/AppError.lib.js'
 import AppResponse from '#lib/AppResponse.lib.js'
 import asyncHandler from '#lib/asyncHandler.lib.js'
 import { enqueueEmail } from '#queue/queues/mailer.queue.js'
 import { addTimeFromNow } from '#lib/dateHelpers.js'
+import { TokenType } from '#constants/model.constant.js'
+import * as validator from './auth.validator.js'
+import * as controller from './auth.controller.js'
 
 const router = Router()
 
+// Google OAuth routes
 router.get('/google', passport.authenticate('google', {
     scope: ['profile', 'email'],
     session: false
@@ -21,44 +25,57 @@ router.get('/google', passport.authenticate('google', {
 router.get('/google/callback',
     passport.authenticate('google', { session: false, failureRedirect: '/login' }),
     asyncHandler(async (req, res) => {
+        if (!req.user || !req.user.id) {
+            throw AppError.unauthorized('Authentication failed')
+        }
 
         const tokenId = tokenRepository._collection([req.user.id]).doc().id
 
-        const token = jwt.sign(
-            { uid: req.user.id, tokenId },
+        const accessToken = jwt.sign(
+            { uid: req.user.id, tokenId, type: TokenType.ACCESS },
             env.SECRET_KEY,
-            { expiresIn: '7d' }
+            { expiresIn: env.ACCESS_TOKEN_EXPIRES_IN }
+        )
+
+        const refreshToken = jwt.sign(
+            { uid: req.user.id, tokenId, type: TokenType.REFRESH },
+            env.REFRESH_SECRET_KEY,
+            { expiresIn: env.REFRESH_TOKEN_EXPIRES_IN }
         )
 
         const expiresAt = addTimeFromNow(7, 'days')
         const addTokenToDb = await tokenRepository.create(req.user.id, tokenId, {
-            //token,    //no need to save token to db since it won't be used for db lookups
             expiresAt,
             revoked: false
         })
 
-        if (!addTokenToDb) throw AppError.server('Could not save token')
+        if (!addTokenToDb) throw AppError.server('Could not save token session')
 
         let statusCode = 200
-        let message = 'User token created'
+        let message = 'User authenticated successfully'
 
         if (req.user.isNewUser) {
             statusCode = 201
-            message = 'User registered'
+            message = 'User registered successfully'
             const payload = onBoardingEmailTemp(req.user.email, req.user.name)
             enqueueEmail(payload)
         }
 
-        AppResponse.success(res, { token }, message, statusCode)
+        AppResponse.success(res, { accessToken, refreshToken, token: accessToken }, message, statusCode)
     })
 )
 
-router.post('/logout', authenticate, asyncHandler( async (req, res) => {
-    const revokeToken = await tokenRepository.update(req.user.id, req.user.tokenId, { revoked: true })
-    if (!revokeToken) throw AppError.server('Could not revoke token')
+// Local authentication endpoints
+router.post('/register', validateBody(validator.registerSchema), asyncHandler(controller.handleRegister))
+router.post('/verify-email', validateBody(validator.verifyEmailSchema), asyncHandler(controller.handleVerifyEmail))
+router.post('/resend-verification', validateBody(validator.resendVerificationSchema), asyncHandler(controller.handleResendVerification))
+router.post('/login', validateBody(validator.loginSchema), asyncHandler(controller.handleLogin))
+router.post('/forgot-password', validateBody(validator.forgotPasswordSchema), asyncHandler(controller.handleForgotPassword))
+router.post('/reset-password', validateBody(validator.resetPasswordSchema), asyncHandler(controller.handleResetPassword))
 
-    AppResponse.success(res, {}, 'Token successfully revoked', 200)
-} ))
+// Session management endpoints
+router.post('/refresh', validateBody(validator.refreshTokenSchema), asyncHandler(controller.handleRefresh))
+router.post('/logout', authenticate, asyncHandler(controller.handleLogout))
 
 function onBoardingEmailTemp (email, name) {
     const mailMsg = `

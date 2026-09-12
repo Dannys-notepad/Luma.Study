@@ -13,7 +13,7 @@ passport.use(new GoogleStrategy(
     },
     async (accessToken, refreshToken, profile, done) => {
         try {
-            const aiCreditsResetsAt = startOfNextDay()
+            const freeAiCreditsResetsAt = startOfNextDay()
             const payload = {
                 id: profile.id,
                 name: profile.displayName,
@@ -22,7 +22,7 @@ passport.use(new GoogleStrategy(
                 authProvider: 'google',
 
                 emailIsVerified: true,
-                aiCreditsResetsAt
+                freeAiCreditsResetsAt
             }
 
             let user = await userRepository.findById(payload.id)

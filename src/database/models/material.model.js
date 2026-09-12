@@ -1,5 +1,9 @@
 import { FieldValue } from '#database/firebase.js';
+import { StorageProvider } from '#constants/model.constant.js'
 
+/**
+ * @type {import('firebase-admin/firestore').FirestoreDataConverter<import('#types/material.type.js').Material>}
+ */
 const materialConverter = {
     toFirestore (m) {
         return {
@@ -7,10 +11,10 @@ const materialConverter = {
             type: m.type,
             fileUrls: m.fileUrls ?? [],
             publicIds: m.publicIds ?? [],
-            //storageProvider: m.storageProvider,
+            storageProvider: m.storageProvider ?? StorageProvider.CLOUDINARY,
 
-            topic: m.topic,
-            lecturer: m.lecturer,
+            topic: m.topic ?? null,
+            lecturer: m.lecturer ?? null,
             year: m.year ?? null,
             extraInfo: m.extraInfo ?? '',
             relatedMaterialId: m.relatedMaterialId ?? null,
@@ -25,21 +29,26 @@ const materialConverter = {
     },
 
     fromFirestore (snapshot) {
+        const data = snapshot.data()
         return {
-            ...snapshot.data(),
+            ...data,
             id: snapshot.id
         }
     }
 }
 
 const ALLOWED_TOP = [
-    'category', 'type', 'fileUrls', 'publicIds',
-    
+    'category', 'type', 'fileUrls', 'publicIds', 'storageProvider',
     'topic', 'lecturer', 'year', 'extraInfo', 'relatedMaterialId',
 ]
 
 const ALLOWED_AI_PIPELINE = [ 'status', 'aiSummary', 'processedText' ]
 
+/**
+ * Shapes partial material payload for update.
+ * @param {Partial<import('#types/material.type.js').Material>} partial
+ * @returns {Record<string, any>}
+ */
 const materialToUpdate = (partial) => {
     const shaped = {}
 
@@ -59,7 +68,6 @@ const materialToUpdate = (partial) => {
     
     return shaped
 }
-
 
 export {
     materialToUpdate,
