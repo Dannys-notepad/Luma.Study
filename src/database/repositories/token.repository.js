@@ -1,6 +1,6 @@
 import { FieldValue } from "#database/firebase.js";
-import BaseRepository from "./base.repository";
-import { courseConverter, courseToUpdate } from '#database/models/token.model.js'
+import BaseRepository from "./base.repository.js";
+import { tokenConverter, tokenToUpdate } from '#database/models/token.model.js'
 
 class TokenRepository extends BaseRepository {
     constructor () {
@@ -16,6 +16,10 @@ class TokenRepository extends BaseRepository {
     }
 
     create (userId, tokenId, data) {
+        if (typeof tokenId === 'object' && data === undefined) {
+            data = tokenId
+            tokenId = undefined
+        }
         return super.create([userId], tokenId, data)
     }
 

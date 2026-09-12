@@ -35,8 +35,12 @@ class AppError extends Error {
         return new AppError(message, 404, ErrorCodes[4])
     }
 
-    static confilct (message = 'Resource already exists') {
+    static conflict (message = 'Resource already exists') {
         return new AppError(message, 409, ErrorCodes[5])
+    }
+
+    static confilct (message = 'Resource already exists') {
+        return AppError.conflict(message)
     }
 
     static validation (message = 'Validation failed') {

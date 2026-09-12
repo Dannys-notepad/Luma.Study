@@ -1,4 +1,4 @@
-import BaseRepository from "./base.repository";
+import BaseRepository from "./base.repository.js";
 import { materialConverter, materialToUpdate } from '#database/models/material.model.js'
 
 class MaterialRepository extends BaseRepository {
@@ -15,8 +15,12 @@ class MaterialRepository extends BaseRepository {
         }
     
         create (userId, courseId, materialId, data) {
-            return super.create([userId, courseId], materialId, data)
+        if (typeof materialId === 'object' && data === undefined) {
+            data = materialId
+            materialId = undefined
         }
+        return super.create([userId, courseId], materialId, data)
+    }
     
         update (userId, courseId, materialId, partial) {
             return super.update([userId, courseId], materialId, partial)

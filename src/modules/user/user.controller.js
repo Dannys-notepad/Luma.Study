@@ -1,24 +1,22 @@
-import { fetchUserProfile } from "./user.service.js"
+import { fetchUserProfile, completeUserProfile } from "./user.service.js"
 import AppError from "#lib/AppError.lib.js"
 import AppResponse from "#lib/AppResponse.lib.js"
 
 export const handleFetchUserProfile = async (req, res) => {
     const userProfile = await fetchUserProfile(req.user.id)
-    const {message, details, statusCode, code } = userProfile
+    if (!userProfile) throw AppError.server('Could not fetch user profile')
 
-    if (!userProfile) throw new AppError.server('Could not fetch user profile')
-    if (statusCode >= 400) throw new AppError(message, statusCode, code, details)
+    const { message, details } = userProfile
+
 
     AppResponse.success(res, details, message)
 }
 
 export const handleCompleteUserProfile = async (req, res) => {
-    const completeProfile = await fetchUserProfile(req.user.id, req.body)
+    const completeProfileResult = await completeUserProfile(req.user.id, req.body)
+    if (!completeProfileResult) throw AppError.server('Could not complete user profile')
 
-    const {message, details, statusCode, code } = completeProfile
-
-    if (!completeProfile) throw new AppError.server('Could not complete user profile')
-    if (statusCode >= 400) throw new AppError(message, statusCode, code, details)
+    const { message, details } = completeProfileResult
 
     AppResponse.success(res, details, message)
 }

@@ -3,8 +3,10 @@ import { FieldValue } from '#database/firebase.js';
 const courseConverter = {
     toFirestore (course) {
         return {
-            courseTitle: course.courseTitle,
-            courseCode: course.courseCode,
+            id: course.code ? course.code.replaceAll(' ', '-') : (course.id ?? null),
+            title: course.title,
+            code: course.code,
+            creditUnit: course.creditUnit,
             lecturers: course.lecturers ?? [],
             createdAt: FieldValue.serverTimestamp()
         }
@@ -12,13 +14,13 @@ const courseConverter = {
 
     fromFirestore (snapshot) {
         return {
-            id: snapshot.id,
-            ...snapshot.data()
+            ...snapshot.data(),
+            id: snapshot.id
         }
     }
 }
 
-const ALLOWED = ['courseTitle', 'courseCode', 'lecturers']
+const ALLOWED = ['title', 'code', 'creditUnit', 'lecturers']
 
 const courseToUpdate = (partial) => {
     const shaped = {}

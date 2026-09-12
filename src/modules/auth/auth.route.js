@@ -22,22 +22,22 @@ router.get('/google/callback',
     passport.authenticate('google', { session: false, failureRedirect: '/login' }),
     asyncHandler(async (req, res) => {
 
-        const tokenId = tokenRepository.collection.doc().id
+        const tokenId = tokenRepository._collection([req.user.id]).doc().id
 
         const token = jwt.sign(
-            { uid: req.user.googleId, tokenId },
+            { uid: req.user.id, tokenId },
             env.SECRET_KEY,
             { expiresIn: '7d' }
         )
 
         const expiresAt = addTimeFromNow(7, 'days')
-        const addTokenToDb = await tokenRepository.create(req.user.googleId, tokenId, {
+        const addTokenToDb = await tokenRepository.create(req.user.id, tokenId, {
             //token,    //no need to save token to db since it won't be used for db lookups
             expiresAt,
             revoked: false
         })
 
-        if (!addTokenToDb) throw new AppError.server('Could not save token')
+        if (!addTokenToDb) throw AppError.server('Could not save token')
 
         let statusCode = 200
         let message = 'User token created'
@@ -45,7 +45,7 @@ router.get('/google/callback',
         if (req.user.isNewUser) {
             statusCode = 201
             message = 'User registered'
-            const payload = onBoardingEmailTemp()
+            const payload = onBoardingEmailTemp(req.user.email, req.user.name)
             enqueueEmail(payload)
         }
 
@@ -55,7 +55,7 @@ router.get('/google/callback',
 
 router.post('/logout', authenticate, asyncHandler( async (req, res) => {
     const revokeToken = await tokenRepository.update(req.user.id, req.user.tokenId, { revoked: true })
-    if (!revokeToken) throw new AppError.server('Could not revoke token')
+    if (!revokeToken) throw AppError.server('Could not revoke token')
 
     AppResponse.success(res, {}, 'Token successfully revoked', 200)
 } ))

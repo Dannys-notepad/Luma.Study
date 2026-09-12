@@ -21,10 +21,14 @@ class BaseRepository {
         return db.collection(this._collectionPath(parentIds)).withConverter(this.converter)
     }
 
+    async _getById (parentIds, id) {
+        const doc = await this._collection(parentIds).doc(id).get()
+        return doc.exists ? doc.data() : null
+    }
+
     async findById (parentIds, id) {
         try {
-            const doc = await this._collection(parentIds).doc(id).get()
-            return doc.exists ? doc.data() : null
+            return await this._getById(parentIds, id)
         } catch (error) {
             handleFirestoreError(error)
         }
@@ -33,7 +37,7 @@ class BaseRepository {
     async list (parentIds) {
         try {
             const snap = await this._collection(parentIds).get()
-            return snap.docs.map((d) => d.data)
+            return snap.docs.map((d) => d.data())
         } catch (error) {
             handleFirestoreError(error)
         }
@@ -41,9 +45,34 @@ class BaseRepository {
 
     async create (parentIds, id, data) {
         try {
+            if (typeof id === 'object' && data === undefined) {
+                data = id
+                id = undefined
+            }
             const ref = id ? this._collection(parentIds).doc(id) : this._collection(parentIds).doc()
             await ref.set(data)
-            return this.findById(parentIds, ref.id)
+            return await this._getById(parentIds, ref.id)
+        } catch (error) {
+            handleFirestoreError(error)
+        }
+    }
+
+    async createMany (parentIds, dataArray) {
+        try {
+            const batch = db.batch()
+            const collection = this._collection(parentIds)
+
+            const refs = dataArray.map((data) => {
+                const ref = collection.doc()
+                batch.set(ref, data)
+                return ref
+            })
+
+            await batch.commit()
+
+            return Promise.all(
+                refs.map((ref) => this._getById(parentIds, ref.id))
+            )
         } catch (error) {
             handleFirestoreError(error)
         }
@@ -53,7 +82,7 @@ class BaseRepository {
         try {
             const shaped = this.toUpdate(partialData)
             await this._collection(parentIds).doc(id).update(shaped)
-            return this.findById(parentIds, id)
+            return await this._getById(parentIds, id)
         } catch (error) {
             handleFirestoreError(error)
         }

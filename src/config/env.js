@@ -16,7 +16,7 @@ const requiredEnvVars = [
 ]
 
 for (let key of requiredEnvVars) {
-    if (process.env[key]) {
+    if (!process.env[key]) {
         throw new Error(`Required environment variable not set: ${key}`)
     }
 }
@@ -25,6 +25,7 @@ const env = {
     PORT: process.env.PORT || 8080,
     NODE_ENV: process.env.NODE_ENV || 'production',
     SECRET_KEY: process.env.SECRET_KEY,
+    FIRESTORE_EMULATOR_HOST: process.env.FIRESTORE_EMULATOR_HOST || 'localhost:8080',
     FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
     FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
     FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,

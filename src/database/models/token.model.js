@@ -12,8 +12,8 @@ const tokenConverter = {
 
     fromFirestore (snapshot) {
         return {
-            id: snapshot.id,
-            ...snapshot.data()
+            ...snapshot.data(),
+            id: snapshot.id
         }
     }
 }

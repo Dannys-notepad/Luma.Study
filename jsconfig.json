@@ -1,8 +1,9 @@
 {
     "compilerOptions": {
+        "checkJs": true,
         "module": "ESNext",
         "moduleResolution": "Bundler",
-        "target": "ES2024",
+        "target": "ES2022",
         "jsx": "react-jsx",
         "allowImportingTsExtensions": true,
         "strictNullChecks": true,

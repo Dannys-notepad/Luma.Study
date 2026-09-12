@@ -7,7 +7,7 @@ import { validateBody } from "#middlewares/validator.middleware.js";
 
 const router = Router()
 
-router.use(authenticate)
+router.use(asyncHandler(authenticate))
 
 router.get('/profile', asyncHandler(controller.handleFetchUserProfile))
 router.post('/profile/complete', asyncHandler(validateBody(validator.completeProfileSchema)), asyncHandler(controller.handleCompleteUserProfile))

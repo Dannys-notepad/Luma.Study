@@ -7,15 +7,18 @@ const materialConverter = {
             type: m.type,
             fileUrls: m.fileUrls ?? [],
             publicIds: m.publicIds ?? [],
+            //storageProvider: m.storageProvider,
+
             topic: m.topic,
             lecturer: m.lecturer,
             year: m.year ?? null,
             extraInfo: m.extraInfo ?? '',
             relatedMaterialId: m.relatedMaterialId ?? null,
+
             aiPipeline: {
-                status: m.status ?? null,
-                aiSummary: m.aiSummary ?? null,
-                processedText: m.processedText ?? null,
+                status: m.aiPipeline?.status ?? m.status ?? null,
+                aiSummary: m.aiPipeline?.aiSummary ?? m.aiSummary ?? null,
+                processedText: m.aiPipeline?.processedText ?? m.processedText ?? null,
             },
             uploadedAt: FieldValue.serverTimestamp()
         }
@@ -23,17 +26,37 @@ const materialConverter = {
 
     fromFirestore (snapshot) {
         return {
-            id: snapshot.id,
-            ...snapshot.data()
+            ...snapshot.data(),
+            id: snapshot.id
         }
     }
 }
 
-const ALLOWED = ['category', 'type', 'fileUrls', 'publicUrls', 'topic', 'lecturer', 'year', 'extrainfo', 'relatedMaterialId', /*'aiSummary', 'processedText'*/ 'aiBox']
+const ALLOWED_TOP = [
+    'category', 'type', 'fileUrls', 'publicIds',
+    
+    'topic', 'lecturer', 'year', 'extraInfo', 'relatedMaterialId',
+]
+
+const ALLOWED_AI_PIPELINE = [ 'status', 'aiSummary', 'processedText' ]
 
 const materialToUpdate = (partial) => {
     const shaped = {}
-    for (const key of ALLOWED) if (partial[key] !== undefined) shaped[key] = partial[key]
+
+    for (const key of ALLOWED_TOP) {
+        if (partial[key] !== undefined) {
+            shaped[key] = partial[key]
+        }
+    }
+
+    if (partial.aiPipeline) {
+        for (const key of ALLOWED_AI_PIPELINE) {
+            if (partial.aiPipeline[key] !== undefined) {
+                shaped[`aiPipeline.${key}`] = partial.aiPipeline[key]
+            }
+        }
+    }
+    
     return shaped
 }
 

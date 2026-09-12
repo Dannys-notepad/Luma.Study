@@ -1,2 +1,5 @@
 .env
 node_modules/*
+firebase-debug.log
+.agents/*
+skills-lock.json

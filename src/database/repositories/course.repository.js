@@ -1,5 +1,5 @@
 import { FieldValue } from "#database/firebase.js";
-import BaseRepository from "./base.repository";
+import BaseRepository from "./base.repository.js";
 import { courseConverter, courseToUpdate } from '#database/models/course.model.js'
 
 class CourseRepository extends BaseRepository {
@@ -16,7 +16,15 @@ class CourseRepository extends BaseRepository {
     }
 
     create (userId, courseId, data) {
+        if (typeof courseId === 'object' && data === undefined) {
+            data = courseId
+            courseId = undefined
+        }
         return super.create([userId], courseId, data)
+    }
+
+    createMany (userId, courseArray) {
+        return super.createMany([userId], courseArray)
     }
 
     update (userId, courseId, partial) {
@@ -28,7 +36,7 @@ class CourseRepository extends BaseRepository {
     }
 
     async addLecturerIfMissing (userId, courseId, lecturerName) {
-        if (!lecturerName) {
+        if (lecturerName) {
             const ref = this.rawRef([userId], courseId)
             await ref.update({
                 lecturers: FieldValue.arrayUnion(lecturerName)
