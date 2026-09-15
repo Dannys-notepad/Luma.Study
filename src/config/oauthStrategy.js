@@ -28,6 +28,10 @@ passport.use(new GoogleStrategy(
             let user = await userRepository.findById(payload.id)
             let isNewUser = false
 
+            if (user?.authProvider === 'email') {
+                return done(AppError.conflict('User already exists with this email and is registered with email/password. Please login with email/password instead.'))
+            }
+
             if (!user) {
                 user = await userRepository.create(payload.id, payload)
                 if (!user) throw AppError.server('Error creating/fetching user')

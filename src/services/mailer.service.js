@@ -2,11 +2,18 @@ import nodemailer from 'nodemailer'
 import env from '#config/env.js'
 
 const transporter = nodemailer.createTransport({
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 30000,
     ...(env.SMTP_HOST
         ? {
             host: env.SMTP_HOST,
             port: env.SMTP_PORT,
-            secure: env.SMTP_SECURE === 'true'
+            secure: env.SMTP_SECURE === 'true',
+            requireTLS: env.SMTP_SECURE !== 'true'
         }
         : { service: 'gmail' }),
     auth: {
@@ -29,8 +36,8 @@ const mail = async (recipient) => {
         const info = await transporter.sendMail({
             from: `"Luma.Study" <${env.SMTP_USERNAME}>`,
             to: toEmail,
-            subject: recipient.subject || 'No subject',
-            text: recipient.text || ''
+            subject: recipient?.subject || 'No subject',
+            text: recipient?.text || ''
         })
 
         console.log('Email sent', info.messageId)

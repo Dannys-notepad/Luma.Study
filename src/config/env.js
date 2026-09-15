@@ -16,7 +16,7 @@ const envSchema = z.object({
     SMTP_PASSWORD: z.string().min(1, 'SMTP_PASSWORD is required'),
     SMTP_HOST: z.string().optional(),
     SMTP_PORT: z.coerce.number().int().positive().default(465),
-    SMTP_SECURE: z.enum(['true', 'false']).default('true'),
+    SMTP_SECURE: z.enum(['true', 'false']).optional(),
     GOOGLE_CLIENT_ID: z.string().min(1, 'GOOGLE_CLIENT_ID is required'),
     GOOGLE_CLIENT_SECRET: z.string().min(1, 'GOOGLE_CLIENT_SECRET is required'),
     GOOGLE_CALLBACK_URL: z.string().min(1, 'GOOGLE_CALLBACK_URL is required')
@@ -34,7 +34,8 @@ if (!result.success) {
 
 const env = {
     ...result.data,
-    REFRESH_SECRET_KEY: result.data.SECRET_KEY
+    REFRESH_SECRET_KEY: result.data.SECRET_KEY,
+    SMTP_SECURE: result.data.SMTP_SECURE ?? (result.data.SMTP_PORT === 465 ? 'true' : 'false')
 }
 
 export default env
