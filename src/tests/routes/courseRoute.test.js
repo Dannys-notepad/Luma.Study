@@ -69,6 +69,60 @@ describe('Course Route (/api/course)', () => {
         })
     })
 
+    describe('POST /api/course', () => {
+        it('creates a course for the authenticated user', async () => {
+            const { token } = await createTestUserAndCourse()
+
+            const res = await request(app)
+                .post('/api/course')
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    courseTitle: 'Operating Systems',
+                    courseCode: 'CSC301',
+                    creditUnit: 4,
+                    lecturers: ['Dr. Brown']
+                })
+
+            expect(res.status).toBe(201)
+            expect(res.body.success).toBe(true)
+            expect(res.body.data.title).toBe('Operating Systems')
+            expect(res.body.data.code).toBe('CSC301')
+        })
+    })
+
+    describe('PATCH /api/course/:courseId', () => {
+        it('updates a course for the authenticated user', async () => {
+            const { token, course } = await createTestUserAndCourse()
+
+            const res = await request(app)
+                .patch(`/api/course/${course.id}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    title: 'Advanced Data Structures',
+                    creditUnit: 5
+                })
+
+            expect(res.status).toBe(200)
+            expect(res.body.success).toBe(true)
+            expect(res.body.data.title).toBe('Advanced Data Structures')
+            expect(res.body.data.creditUnit).toBe(5)
+        })
+    })
+
+    describe('DELETE /api/course/:courseId', () => {
+        it('deletes a course for the authenticated user', async () => {
+            const { token, course } = await createTestUserAndCourse()
+
+            const res = await request(app)
+                .delete(`/api/course/${course.id}`)
+                .set('Authorization', `Bearer ${token}`)
+
+            expect(res.status).toBe(200)
+            expect(res.body.success).toBe(true)
+            expect(res.body.data.id).toBe(course.id)
+        })
+    })
+
     describe('GET /api/course/enrolledCourses/:id', () => {
         it('returns 401 when no token is provided', async () => {
             const res = await request(app).get('/api/course/enrolledCourses/CSC201')

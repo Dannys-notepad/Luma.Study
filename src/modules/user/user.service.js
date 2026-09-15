@@ -1,4 +1,5 @@
 import AppError from "#lib/AppError.lib.js";
+import { sanitizeUserResponse } from "#lib/responseSanitizer.lib.js"
 import { userRepository, courseRepository } from "#database/repositories/index.js";
 
 /**
@@ -22,7 +23,7 @@ export const fetchUserProfile = async (userId) => {
         const userProfile = await userRepository.findById(userId)
         if (!userProfile) throw AppError.notFound('User not found')
 
-        return response('User profile', userProfile)
+        return response('User profile', sanitizeUserResponse(userProfile))
     } catch (error) {
         if (error instanceof AppError) throw error
         throw AppError.server('Failed to fetch user profile', error)
@@ -79,7 +80,7 @@ export const completeUserProfile = async (userId, data) => {
             if (!createCourses) throw AppError.server('Could not create user courses')
         }
 
-        return response('User profile completed', completeProfile)
+        return response('User profile completed', sanitizeUserResponse(completeProfile))
     } catch (error) {
         if (error instanceof AppError) throw error
         throw AppError.server('Failed to complete user profile', error)

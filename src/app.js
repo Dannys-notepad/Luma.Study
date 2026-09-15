@@ -48,6 +48,7 @@ app.use('/health', health)
 // API routes
 app.use('/api/auth', authRoute)
 app.use('/api/user', userRoute)
+app.use('/api/courses', courseRoute)
 app.use('/api/course', courseRoute)
 
 // Custom error middlewares

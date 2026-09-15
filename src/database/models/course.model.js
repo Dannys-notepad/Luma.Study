@@ -1,5 +1,6 @@
 import { FieldValue } from '#database/firebase.js';
 
+
 /**
  * @type {import('firebase-admin/firestore').FirestoreDataConverter<import('#types/course.type.js').Course>}
  */

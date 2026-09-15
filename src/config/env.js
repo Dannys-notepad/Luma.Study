@@ -3,12 +3,12 @@ import { z } from 'zod'
 
 const envSchema = z.object({
     PORT: z.coerce.number().default(8080),
-    NODE_ENV: z.enum(['development', 'production', 'test']).default('production'),
+    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     SECRET_KEY: z.string().min(1, 'SECRET_KEY is required'),
     REFRESH_SECRET_KEY: z.string().optional(),
     ACCESS_TOKEN_EXPIRES_IN: z.string().default('15m'),
     REFRESH_TOKEN_EXPIRES_IN: z.string().default('7d'),
-    FIRESTORE_EMULATOR_HOST: z.string().default('localhost:8080'),
+    FIRESTORE_EMULATOR_HOST: z.string().default('localhost:8080').optional(),
     FIREBASE_PROJECT_ID: z.string().min(1, 'FIREBASE_PROJECT_ID is required'),
     FIREBASE_CLIENT_EMAIL: z.string().min(1, 'FIREBASE_CLIENT_EMAIL is required'),
     FIREBASE_PRIVATE_KEY: z.string().min(1, 'FIREBASE_PRIVATE_KEY is required'),

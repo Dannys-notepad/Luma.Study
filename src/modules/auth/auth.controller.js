@@ -1,6 +1,17 @@
 import AppResponse from "#lib/AppResponse.lib.js"
 import * as authService from "./auth.service.js"
 
+/**
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
+export const handleGoogleCallback = async (req, res) => {
+    const authUser = req.user
+    const handleAuth = await authService.googleCallback(authUser)
+    const { message, details, code } = handleAuth
+    return AppResponse.success(res, details, message, code)
+}
+
 export const handleRegister = async (req, res) => {
     const { name, email, password } = req.body
     const result = await authService.registerUser(name, email, password)
