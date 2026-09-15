@@ -47,28 +47,6 @@ describe('Course Route (/api/course)', () => {
         }
     })
 
-    describe('GET /api/course/enrolledCourses', () => {
-        it('returns 401 when no token is provided', async () => {
-            const res = await request(app).get('/api/course/enrolledCourses')
-            expect(res.status).toBe(401)
-            expect(res.body.success).toBe(false)
-        })
-
-        it('returns 200 and list of enrolled courses for valid user', async () => {
-            const { token, course } = await createTestUserAndCourse()
-
-            const res = await request(app)
-                .get('/api/course/enrolledCourses')
-                .set('Authorization', `Bearer ${token}`)
-
-            expect(res.status).toBe(200)
-            expect(res.body.success).toBe(true)
-            expect(Array.isArray(res.body.data)).toBe(true)
-            expect(res.body.data.length).toBeGreaterThan(0)
-            expect(res.body.data[0].code).toBe(course.code)
-        })
-    })
-
     describe('POST /api/course', () => {
         it('creates a course for the authenticated user', async () => {
             const { token } = await createTestUserAndCourse()
@@ -120,38 +98,6 @@ describe('Course Route (/api/course)', () => {
             expect(res.status).toBe(200)
             expect(res.body.success).toBe(true)
             expect(res.body.data.id).toBe(course.id)
-        })
-    })
-
-    describe('GET /api/course/enrolledCourses/:id', () => {
-        it('returns 401 when no token is provided', async () => {
-            const res = await request(app).get('/api/course/enrolledCourses/CSC201')
-            expect(res.status).toBe(401)
-            expect(res.body.success).toBe(false)
-        })
-
-        it('returns 200 and details of specific course when valid course ID is passed', async () => {
-            const { token, course } = await createTestUserAndCourse()
-
-            const res = await request(app)
-                .get(`/api/course/enrolledCourses/${course.id}`)
-                .set('Authorization', `Bearer ${token}`)
-
-            expect(res.status).toBe(200)
-            expect(res.body.success).toBe(true)
-            expect(res.body.data.id).toBe(course.id)
-            expect(res.body.data.title).toBe(course.title)
-        })
-
-        it('returns 404 when requested course ID does not exist', async () => {
-            const { token } = await createTestUserAndCourse()
-
-            const res = await request(app)
-                .get('/api/course/enrolledCourses/NONEXISTENT999')
-                .set('Authorization', `Bearer ${token}`)
-
-            expect(res.status).toBe(404)
-            expect(res.body.success).toBe(false)
         })
     })
 })

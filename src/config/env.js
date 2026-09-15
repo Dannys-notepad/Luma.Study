@@ -14,6 +14,9 @@ const envSchema = z.object({
     FIREBASE_PRIVATE_KEY: z.string().min(1, 'FIREBASE_PRIVATE_KEY is required'),
     SMTP_USERNAME: z.string().min(1, 'SMTP_USERNAME is required'),
     SMTP_PASSWORD: z.string().min(1, 'SMTP_PASSWORD is required'),
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().int().positive().default(465),
+    SMTP_SECURE: z.enum(['true', 'false']).default('true'),
     GOOGLE_CLIENT_ID: z.string().min(1, 'GOOGLE_CLIENT_ID is required'),
     GOOGLE_CLIENT_SECRET: z.string().min(1, 'GOOGLE_CLIENT_SECRET is required'),
     GOOGLE_CALLBACK_URL: z.string().min(1, 'GOOGLE_CALLBACK_URL is required')

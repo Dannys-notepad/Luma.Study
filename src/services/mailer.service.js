@@ -2,7 +2,13 @@ import nodemailer from 'nodemailer'
 import env from '#config/env.js'
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    ...(env.SMTP_HOST
+        ? {
+            host: env.SMTP_HOST,
+            port: env.SMTP_PORT,
+            secure: env.SMTP_SECURE === 'true'
+        }
+        : { service: 'gmail' }),
     auth: {
         user: env.SMTP_USERNAME,
         pass: env.SMTP_PASSWORD
@@ -10,6 +16,9 @@ const transporter = nodemailer.createTransport({
 })
 
 
+/**
+ * @param {{ to?: string, email?: string, subject?: string, text?: string }} recipient
+ */
 const mail = async (recipient) => {
     const toEmail = recipient?.to || recipient?.email
     try {
@@ -29,7 +38,7 @@ const mail = async (recipient) => {
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown mail error'
         console.error('Email failed to send:', toEmail, message)
-        return null
+        throw error
     }
 }
 
