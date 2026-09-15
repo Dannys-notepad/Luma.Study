@@ -1,5 +1,5 @@
 import passport from 'passport'
-import { Strategy as GoogleStrategy } from 'passport-google-oauth'
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
 import { userRepository } from '#database/repositories/index.js'
 import { startOfNextDay } from '#lib/dateHelpers.js'
 import AppError from '#lib/AppError.lib.js'
@@ -7,8 +7,8 @@ import env from './env.js'
 
 passport.use(new GoogleStrategy(
     {
-        consumerKey: env.GOOGLE_CLIENT_ID,
-        consumerSecret: env.GOOGLE_CLIENT_SECRET,
+        clientID: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
         callbackURL: env.GOOGLE_CALLBACK_URL,
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -17,7 +17,7 @@ passport.use(new GoogleStrategy(
             const payload = {
                 id: profile.id,
                 name: profile.displayName,
-                email: profile.emails[0].value,
+                email: profile.emails?.[0]?.value,
                 avatarUrl: profile.photos?.[0]?.value ?? null,
                 authProvider: 'google',
 
@@ -37,7 +37,7 @@ passport.use(new GoogleStrategy(
             done(null, { ...user, isNewUser })
 
         } catch (error) {
-            done(error, null)
+            done(error)
         }
     }
 ))

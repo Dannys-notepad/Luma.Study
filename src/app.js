@@ -39,6 +39,11 @@ app.use(helmet({
 // Passport initialization
 app.use(passport.initialize())
 
+// root route for render calling
+app.get('/', async (req, res) => {
+    res.json({status: 'ok'})
+})
+
 // Swagger UI route
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
 
