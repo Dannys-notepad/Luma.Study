@@ -36,9 +36,14 @@ const mail = async (recipient) => {
         console.log('Email sent:', result.messageId)
         return result
     } catch (error) {
-        const message = error instanceof AppError ? error.message : 'Unknown mail error'
-        console.error('Email failed to send:', toEmail, message)
-        throw AppError.server(message, error)
+        console.error('Brevo email error', {
+            error,
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+            body: error?.body
+        })
+        throw AppError.server(error.message, error)
     }
 }
 
