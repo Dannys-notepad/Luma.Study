@@ -1,30 +1,8 @@
-import dns from 'node:dns'
-import nodemailer from 'nodemailer'
 import env from '#config/env.js'
+import { Resend } from 'resend'
+import AppError from '#lib/AppError.lib.js'
 
-dns.setDefaultResultOrder('ipv4first')
-
-const transporter = nodemailer.createTransport({
-    pool: true,
-    maxConnections: 5,
-    maxMessages: 100,
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 30000,
-    ...(env.SMTP_HOST
-        ? {
-            host: env.SMTP_HOST,
-            port: env.SMTP_PORT,
-            secure: env.SMTP_SECURE === 'true',
-            requireTLS: env.SMTP_SECURE !== 'true'
-        }
-        : { service: 'gmail' }),
-    auth: {
-        user: env.SMTP_USERNAME,
-        pass: env.SMTP_PASSWORD
-    }
-})
-
+const resend = new Resend(env.RESEND_API_KEY)
 
 /**
  * @param {{ to?: string, email?: string, subject?: string, text?: string }} recipient
@@ -33,22 +11,30 @@ const mail = async (recipient) => {
     const toEmail = recipient?.to || recipient?.email
     try {
         if (!toEmail) {
-            throw new Error('Recipient email is required')
+            throw AppError.server('Recipient email is required')
         }
 
-        const info = await transporter.sendMail({
-            from: `"Luma.Study" <${env.SMTP_USERNAME}>`,
-            to: toEmail,
+        const { data, error } = await resend.emails.send({
+            from: `"Luma.Study" <${env.RESEND_FROM_EMAIL}>`,
+            to: [toEmail],
             subject: recipient?.subject || 'No subject',
             text: recipient?.text || ''
         })
 
-        console.log('Email sent', info.messageId)
-        return info
+        if (error) {
+            console.error('Resend email failed:', {
+                to: toEmail,
+                error
+            })
+            throw AppError.server(error.message, error)
+         }
+
+        console.log('Email sent:', data.id)
+        return data
     } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown mail error'
+        const message = error instanceof AppError ? error.message : 'Unknown mail error'
         console.error('Email failed to send:', toEmail, message)
-        throw error
+        throw AppError.server(message, error)
     }
 }
 

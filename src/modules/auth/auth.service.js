@@ -6,7 +6,7 @@ import { addTimeFromNow, hasExpired } from '#lib/dateHelpers.js'
 import { hashPassword, comparePassword, generateOtp } from '#lib/password.lib.js'
 import { userRepository, tokenRepository } from '#database/repositories/index.js'
 import { TokenType, AuthProvider } from '#constants/model.constant.js'
-import { enqueueEmail } from '#queue/queues/mailer.queue.js'
+import { enqueueEmail } from '#queue/workers/mail.worker.js'
 
 /**
  * @param {string} message
