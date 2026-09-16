@@ -30,7 +30,7 @@ const mail = async (recipient) => {
 
             //from: `"Luma.Study" <${env.RESEND_FROM_EMAIL}>`,
             subject: recipient?.subject || 'No subject',
-            text: recipient?.text || ''
+            textContent: recipient?.text || ''
         })
 
         console.log('Email sent:', result.messageId)
