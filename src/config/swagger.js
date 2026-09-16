@@ -32,6 +32,11 @@ const swaggerSpec = {
           success: { type: 'boolean', example: true },
           message: { type: 'string', example: 'Operation completed successfully' },
           data: { type: 'object', nullable: true }
+        },
+        example: {
+          success: true,
+          message: 'Operation completed successfully',
+          data: null
         }
       },
       ApiErrorResponse: {
@@ -46,6 +51,69 @@ const swaggerSpec = {
               details: { type: 'object', nullable: true }
             }
           }
+        },
+        example: {
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Invalid or expired token',
+            details: null
+          }
+        }
+      },
+      User: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', example: 'user_abc123' },
+          name: { type: 'string', example: 'Jane Doe' },
+          email: { type: 'string', format: 'email', example: 'jane@example.com' },
+          avatarUrl: { type: 'string', format: 'uri', example: 'https://api.dicebear.com/9.x/avataaars/svg?seed=JaneDoe' },
+          authProvider: { type: 'string', example: 'email' },
+          emailIsVerified: { type: 'boolean', example: true },
+          onBoardingCompleted: { type: 'boolean', example: true },
+          level: { type: 'integer', nullable: true, example: 300 },
+          department: { type: 'string', nullable: true, example: 'Computer Science' },
+          faculty: { type: 'string', nullable: true, example: 'Science' },
+          university: { type: 'string', nullable: true, example: 'Harvard University' },
+          academicSession: { type: 'string', nullable: true, example: '2024/2025' },
+          lectureTimeTable: { type: 'array', items: { type: 'object' }, example: [{ day: 'Monday', courseCodes: ['CSC301'] }] },
+          currentSemester: { type: 'string', nullable: true, example: 'First' },
+          timezone: { type: 'string', example: 'UTC' },
+          learningMode: { type: 'string', example: 'Standard' },
+          freeAiCredits: { type: 'integer', example: 20 },
+          paidAiCredits: { type: 'integer', example: 0 },
+          accountType: { type: 'string', example: 'free' },
+          isActive: { type: 'boolean', example: true }
+        }
+      },
+      Course: {
+        type: 'object',
+        required: ['id', 'title', 'code', 'creditUnit', 'lecturers'],
+        properties: {
+          id: { type: 'string', example: 'CSC-301' },
+          title: { type: 'string', example: 'Data Structures' },
+          code: { type: 'string', example: 'CSC 301' },
+          creditUnit: { type: 'integer', example: 3 },
+          lecturers: { type: 'array', items: { type: 'string' }, example: ['Dr. Ada Lovelace'] }
+        }
+      },
+      CreateCourseInput: {
+        type: 'object',
+        required: ['courseTitle', 'courseCode'],
+        properties: {
+          courseTitle: { type: 'string', example: 'Data Structures' },
+          courseCode: { type: 'string', example: 'CSC 301' },
+          creditUnit: { type: 'integer', minimum: 1, maximum: 12, example: 3 },
+          lecturers: { type: 'array', items: { type: 'string' }, example: ['Dr. Ada Lovelace'] }
+        }
+      },
+      UpdateCourseInput: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', example: 'Advanced Data Structures' },
+          code: { type: 'string', example: 'CSC 401' },
+          creditUnit: { type: 'integer', minimum: 1, maximum: 12, example: 4 },
+          lecturers: { type: 'array', items: { type: 'string' }, example: ['Dr. Ada Lovelace', 'Prof. Alan Turing'] }
         }
       },
       RegisterInput: {
@@ -298,26 +366,123 @@ const swaggerSpec = {
         }
       }
     },
-    '/api/course/enrolledCourses': {
+    '/api/courses': {
       get: {
         summary: 'List Enrolled Courses',
         tags: ['Course'],
         security: [{ bearerAuth: [] }],
         responses: {
-          200: { description: 'Enrolled courses retrieved successfully', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiResponse' } } } }
+          200: {
+            description: 'Enrolled courses retrieved successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiResponse' },
+                example: {
+                  success: true,
+                  message: 'User enrolled courses',
+                  data: [{ id: 'CSC-301', title: 'Data Structures', code: 'CSC 301', creditUnit: 3, lecturers: ['Dr. Ada Lovelace'] }]
+                }
+              }
+            }
+          }
+        }
+      },
+      post: {
+        summary: 'Create Course',
+        tags: ['Course'],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateCourseInput' } } }
+        },
+        responses: {
+          201: {
+            description: 'Course created successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiResponse' },
+                example: {
+                  success: true,
+                  message: 'Course created',
+                  data: { id: 'CSC-301', title: 'Data Structures', code: 'CSC 301', creditUnit: 3, lecturers: ['Dr. Ada Lovelace'] }
+                }
+              }
+            }
+          },
+          409: { description: 'Course already exists', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
         }
       }
     },
-    '/api/course/enrolledCourses/{id}': {
+    '/api/courses/{courseId}': {
+      parameters: [{ name: 'courseId', in: 'path', required: true, schema: { type: 'string', example: 'CSC-301' } }],
       get: {
         summary: 'Fetch Enrolled Course Details',
         tags: ['Course'],
         security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
         responses: {
-          200: { description: 'Enrolled course retrieved successfully', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiResponse' } } } }
+          200: {
+            description: 'Enrolled course retrieved successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiResponse' },
+                example: {
+                  success: true,
+                  message: 'User enrolled course',
+                  data: { id: 'CSC-301', title: 'Data Structures', code: 'CSC 301', creditUnit: 3, lecturers: ['Dr. Ada Lovelace'] }
+                }
+              }
+            }
+          },
+          404: { description: 'Course not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+        }
+      },
+      patch: {
+        summary: 'Update Course',
+        tags: ['Course'],
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/UpdateCourseInput' } } }
+        },
+        responses: {
+          200: {
+            description: 'Course updated successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiResponse' },
+                example: {
+                  success: true,
+                  message: 'Course updated',
+                  data: { id: 'CSC-301', title: 'Advanced Data Structures', code: 'CSC 301', creditUnit: 3, lecturers: ['Dr. Ada Lovelace'] }
+                }
+              }
+            }
+          }
+        }
+      },
+      delete: {
+        summary: 'Delete Course',
+        tags: ['Course'],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'Course deleted successfully',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/ApiResponse' },
+                example: { success: true, message: 'Course deleted', data: { id: 'CSC-301' } }
+              }
+            }
+          },
+          404: { description: 'Course not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
         }
       }
+    },
+    '/api/course': {
+      $ref: '#/paths/~1api~1courses'
+    },
+    '/api/course/{courseId}': {
+      $ref: '#/paths/~1api~1courses~1{courseId}'
     }
   }
 }

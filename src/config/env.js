@@ -15,8 +15,9 @@ const envSchema = z.object({
     GOOGLE_CLIENT_ID: z.string().min(1, 'GOOGLE_CLIENT_ID is required'),
     GOOGLE_CLIENT_SECRET: z.string().min(1, 'GOOGLE_CLIENT_SECRET is required'),
     GOOGLE_CALLBACK_URL: z.string().min(1, 'GOOGLE_CALLBACK_URL is required'),
-    RESEND_API_KEY: z.string().min(1, 'RESEND_API_KEY is required'),
-    RESEND_FROM_EMAIL: z.string().min(1, 'RESEND_FROM_EMAIL is required')
+    BREVO_API_KEY: z.string().min(1, 'BREVO_API_KEY is required'),
+    BREVO_FROM_EMAIL: z.string().min(1, 'BREVO_FROM_EMAIL is required'),
+    BREVO_FROM_NAME: z.string().default('Luma.Study')
 })
 
 const result = envSchema.safeParse(process.env)
