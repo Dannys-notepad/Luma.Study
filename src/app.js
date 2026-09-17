@@ -26,6 +26,7 @@ const app = express();
 app.use(logRequests)
 
 // General Rate Limiter (Applied globally)
+app.set('trust proxy', 1)
 app.use(globalRateLimiter)
 
 // Middlewares

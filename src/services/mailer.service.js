@@ -1,10 +1,11 @@
 import env from '#config/env.js'
-import { BrevoClient } from '@getbrevo/brevo'
+import Mailjet from 'node-mailjet'
 import AppError from '#lib/AppError.lib.js'
 
-const brevo = new BrevoClient({
-    apiKey: env.BREVO_API_KEY
-})
+const mailjet = Mailjet.apiConnect(
+    env.MAILJET_API_KEY,
+    env.MAILJET_API_SECRET
+)
 
 /**
  * @param {{ to?: string, email?: string, subject?: string, text?: string }} recipient
@@ -16,24 +17,27 @@ const mail = async (recipient) => {
             throw AppError.server('Recipient email is required')
         }
 
-        const result = await brevo.transactionalEmails.sendTransacEmail({
-
-            sender: {
-                name: env.BREVO_FROM_NAME,
-                email: env.BREVO_FROM_EMAIL
-            },
-            to: [
+        const result = await mailjet
+        .post('send', { version: 'v3.1' })
+        .request({
+            Messages: [
                 {
-                    email: toEmail
+                    From: {
+                        Email: env.MAILJET_FROM_EMAIL,
+                        Name: env.MAILJET_FROM_NAME
+                    },
+                    To: [
+                        {
+                            Email: toEmail
+                        }
+                    ],
+                    Subject: recipient?.subject || 'No subject',
+                    TextPart: recipient?.text || ''
                 }
-            ],
-
-            //from: `"Luma.Study" <${env.RESEND_FROM_EMAIL}>`,
-            subject: recipient?.subject || 'No subject',
-            textContent: recipient?.text || ''
+            ]
         })
 
-        console.log('Email sent:', result.messageId)
+        console.log('Email sent:', result)
         return result
     } catch (error) {
         console.error('Brevo email error', {

@@ -66,7 +66,8 @@ function onBoardingEmailTemp (email, name) {
     return {
         to: email,
         subject: `Let's get your semester into Luma.Study`,
-        text: mailMsg
+        text: mailMsg,
+        name
     }
 }
 
@@ -152,6 +153,7 @@ export const registerUser = async (name, email, password) => {
 
         enqueueEmail({
             to: email,
+            name,
             subject: 'Verify your Luma.Study account',
             text: `Hi ${name},\n\nWelcome to Luma.Study! Your email verification code is: ${verificationCode}\n\nThis code will expire in 24 hours.\n\n- The Luma.Study Team`
         })
@@ -241,6 +243,7 @@ export const resendVerificationCode = async (email) => {
 
         enqueueEmail({
             to: email,
+            name: user.name,
             subject: 'Verify your Luma.Study account',
             text: `Hi ${user.name},\n\nYour new email verification code is: ${verificationCode}\n\nThis code will expire in 24 hours.\n\n- The Luma.Study Team`
         })
@@ -322,6 +325,7 @@ export const requestPasswordReset = async (email) => {
 
             enqueueEmail({
                 to: email,
+                name: user.name,
                 subject: 'Reset your Luma.Study password',
                 text: `Hi ${user.name},\n\nYou requested a password reset. Your password reset code is: ${resetCode}\n\nThis code will expire in 1 hour. If you did not request this, please ignore this email.\n\n- The Luma.Study Team`
             })
