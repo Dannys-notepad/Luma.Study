@@ -1,6 +1,8 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Passport oauth import
 import passport from '#config/oauthStrategy.js'
@@ -20,7 +22,11 @@ import authRoute from '#modules/auth/auth.route.js'
 import userRoute from '#modules/user/user.route.js'
 import courseRoute from '#modules/course/course.route.js'
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 const app = express();
+
 
 // Request logger
 app.use(logRequests)
@@ -30,9 +36,23 @@ app.set('trust proxy', 1)
 app.use(globalRateLimiter)
 
 // Middlewares
+app.use(express.static(path.join(__dirname, '..', 'public'), {
+    extensions: ['html'] 
+}))
 app.use(express.json({ limit: '1mb' }))
 app.use(express.urlencoded({ extended: false }))
-app.use(cors())
+app.use(cors({
+    origin: [
+        'http://localhost:5500',
+        'http://127.0.0.1:5500'
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTION'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Content-Length'],
+    maxAge: 86400
+}))
+app.options('*', cors())
 app.use(helmet({
     contentSecurityPolicy: false // Allows inline Swagger UI scripts
 }))
@@ -41,6 +61,7 @@ app.use(helmet({
 app.use(passport.initialize())
 
 // root route for render calling
+// this route is currently unreachable.
 app.get('/', async (req, res) => {
     res.json({status: 'ok'})
 })

@@ -2,6 +2,7 @@ import { Router } from 'express'
 import passport from '#config/oauthStrategy.js'
 import authenticate from '#middlewares/auth.middleware.js'
 import { validateBody } from '#middlewares/validator.middleware.js'
+import idempotency from '#idempotency/idempotency.js'
 import asyncHandler from '#lib/asyncHandler.lib.js'
 import * as validator from './auth.validator.js'
 import * as controller from './auth.controller.js'
@@ -19,7 +20,7 @@ router.get('/google/callback', passport.authenticate('google', { session: false 
 )
 
 // Local authentication endpoints
-router.post('/register', validateBody(validator.registerSchema), asyncHandler(controller.handleRegister))
+router.post('/register', idempotency, validateBody(validator.registerSchema), asyncHandler(controller.handleRegister))
 router.post('/verify-email', validateBody(validator.verifyEmailSchema), asyncHandler(controller.handleVerifyEmail))
 router.post('/resend-verification', validateBody(validator.resendVerificationSchema), asyncHandler(controller.handleResendVerification))
 router.post('/login', validateBody(validator.loginSchema), asyncHandler(controller.handleLogin))
