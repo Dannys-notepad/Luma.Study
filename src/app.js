@@ -52,7 +52,7 @@ app.use(cors({
     exposedHeaders: ['Content-Length'],
     maxAge: 86400
 }))
-app.options('*', cors())
+app.options('/*splat', cors())
 app.use(helmet({
     contentSecurityPolicy: false // Allows inline Swagger UI scripts
 }))
