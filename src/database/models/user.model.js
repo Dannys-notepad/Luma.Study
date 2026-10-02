@@ -3,8 +3,7 @@ import { LearningMode, UserAccountType, AuthProvider } from '#constants/model.co
 
 function defaultAvatarUrl (name) {
     let editedName = (name || 'user').replaceAll(' ', '')
-    let url = `https://api.dicebear.com/9.x/avataaars/svg?seed=${editedName}`
-    return url
+    return `https://api.dicebear.com/9.x/avataaars/svg?seed=${editedName}`
 }
 
 /**
@@ -15,7 +14,7 @@ const userConverter = {
         return {
             id: user.id ?? null,
             name: user.name,
-            email: user.email,
+            email: user.email ? user.email.toLowerCase().trim() : user.email,
             hashedPassword: user.hashedPassword ?? null,
             avatarUrl: user.avatarUrl ?? defaultAvatarUrl(user.name),
             authProvider: user.authProvider ?? AuthProvider.GOOGLE,
@@ -28,13 +27,13 @@ const userConverter = {
             lectureTimeTable: user.lectureTimeTable ?? [],
             currentSemester: user.currentSemester ?? null,
             examinationTimeTable: user.examinationTimeTable ?? null,
-            
+
             timezone: user.timezone ?? 'UTC',
             storageUsedBytes: user.storageUsedBytes ?? 0,
-            storageLimitBytes: user.storageLimitBytes ?? 1073741824, // 1GB default limit
+            storageLimitBytes: user.storageLimitBytes ?? 1073741824,
             fcmTokens: user.fcmTokens ?? [],
             learningMode: user.learningMode ?? LearningMode.STANDARD,
-            
+
             freeAiCredits: user.freeAiCredits ?? 20,
             paidAiCredits: user.paidAiCredits ?? 0,
             freeAiCreditsResetsAt: user.freeAiCreditsResetsAt ?? null,
@@ -66,24 +65,15 @@ const userConverter = {
 
 const ALLOWED = [
     'name', 'email', 'googleId', 'avatarUrl', 'hashedPassword', 'authProvider',
-
     'level', 'department', 'faculty', 'university', 'academicSession', 'lectureTimeTable', 'currentSemester', 'examinationTimeTable',
-
     'timezone', 'storageUsedBytes', 'storageLimitBytes', 'fcmTokens', 'learningMode',
-
     'aiCredits', 'aiCreditsResetsAt', 'totalAiCreditsUsed',
-
-    'accountType', 'isActive', 'emailIsVerified', 
-    'emailVerificationToken', 'emailVerificationExpiresAt', 
-    'passwordResetToken', 'passwordResetExpiresAt', 
+    'accountType', 'isActive', 'emailIsVerified',
+    'emailVerificationToken', 'emailVerificationExpiresAt',
+    'passwordResetToken', 'passwordResetExpiresAt',
     'onBoardingCompleted', 'lastLoginAt'
 ]
 
-/**
- * Shapes partial user update payload.
- * @param {Partial<import('#types/user.type.js').User>} partial
- * @returns {Record<string, any>}
- */
 const userToUpdate = (partial) => {
     const shaped = {}
     for (const key of ALLOWED) if (partial[key] !== undefined) shaped[key] = partial[key]

@@ -10,7 +10,6 @@ class BaseRepository {
 
     _collectionPath (parentIds = []) {
         let path = this.pathSegments[0]
-        
         for (let i = 1; i < this.pathSegments.length; i++) {
             path += `/${parentIds[i - 1]}/${this.pathSegments[i]}`
         }
@@ -57,22 +56,32 @@ class BaseRepository {
         }
     }
 
+    /**
+     * Creates a document only if it doesn't already exist.
+     * Uses Firestore's `create()` so concurrent writes to the same ID
+     * surface as ALREADY_EXISTS (gRPC code 6) → mapped to 409 by handleFirestoreError.
+     */
+    async createStrict (parentIds, id, data) {
+        try {
+            const ref = this._collection(parentIds).doc(id)
+            await ref.create(data)
+            return await this._getById(parentIds, id)
+        } catch (error) {
+            handleFirestoreError(error)
+        }
+    }
+
     async createMany (parentIds, dataArray) {
         try {
             const batch = db.batch()
             const collection = this._collection(parentIds)
-
             const refs = dataArray.map((data) => {
                 const ref = collection.doc()
                 batch.set(ref, data)
                 return ref
             })
-
             await batch.commit()
-
-            return Promise.all(
-                refs.map((ref) => this._getById(parentIds, ref.id))
-            )
+            return Promise.all(refs.map((ref) => this._getById(parentIds, ref.id)))
         } catch (error) {
             handleFirestoreError(error)
         }

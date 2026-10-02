@@ -1,9 +1,21 @@
+import crypto from 'node:crypto'
 import BaseRepository from "./base.repository.js";
 import { userConverter, userToUpdate } from '#database/models/user.model.js'
 
 class UserRepository extends BaseRepository {
     constructor () {
         super(['users'], userConverter, userToUpdate)
+    }
+
+    /**
+     * Deterministic user ID derived from email.
+     * Same email (case-insensitive) → same ID → Firestore rejects the second create.
+     */
+    emailToId (email) {
+        return crypto
+            .createHash('sha256')
+            .update(email.toLowerCase().trim())
+            .digest('hex')
     }
 
     findById (id) {
@@ -18,6 +30,10 @@ class UserRepository extends BaseRepository {
         return super.create([], id, data)
     }
 
+    createStrict (id, data) {
+        return super.createStrict([], id, data)
+    }
+
     update (id, partial) {
         return super.update([], id, partial)
     }
@@ -27,17 +43,14 @@ class UserRepository extends BaseRepository {
     }
 
     async findByEmail (email) {
-        const results = await this.findWhere([], 'email', '==', email)
+        const normalized = email.toLowerCase().trim()
+        const results = await this.findWhere([], 'email', '==', normalized)
         return results[0] ?? null
     }
 
     async findByGoogleId (googleId) {
         const results = await this.findWhere([], 'googleId', '==', googleId)
         return results[0] ?? null
-    }
-
-    async findByGoolgeId (googleId) {
-        return this.findByGoogleId(googleId)
     }
 }
 

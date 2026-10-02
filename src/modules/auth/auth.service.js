@@ -126,7 +126,10 @@ export const googleCallback = async (user) => {
  */
 export const registerUser = async (name, email, password) => {
     try {
-        const existingUser = await userRepository.findByEmail(email)
+        const normalizedEmail = email.toLowerCase().trim()
+
+        // 1. Fast path: check for existing user (friendly error messages).
+        const existingUser = await userRepository.findByEmail(normalizedEmail)
         if (existingUser) {
             if (existingUser.authProvider === AuthProvider.GOOGLE && !existingUser.hashedPassword) {
                 throw AppError.conflict('An account with this email exists via Google Sign-In. Please log in with Google.')
@@ -138,9 +141,13 @@ export const registerUser = async (name, email, password) => {
         const verificationCode = generateOtp()
         const expiresAt = addTimeFromNow(24, 'hours')
 
-        const newUser = await userRepository.create({
+        // 2. Deterministic ID — two concurrent creates for the same email
+        //    collide on the same doc, and Firestore rejects the loser.
+        const userId = userRepository.emailToId(normalizedEmail)
+
+        const newUser = await userRepository.createStrict(userId, {
             name,
-            email,
+            email: normalizedEmail,
             hashedPassword,
             authProvider: AuthProvider.EMAIL,
             emailIsVerified: false,
@@ -152,7 +159,7 @@ export const registerUser = async (name, email, password) => {
         if (!newUser) throw AppError.server('Could not create user account')
 
         enqueueEmail({
-            to: email,
+            to: normalizedEmail,
             name,
             subject: 'Verify your Luma.Study account',
             text: `Hi ${name},\n\nWelcome to Luma.Study! Your email verification code is: ${verificationCode}\n\nThis code will expire in 24 hours.\n\n- The Luma.Study Team`

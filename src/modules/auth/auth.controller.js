@@ -15,8 +15,7 @@ export const handleGoogleCallback = async (req, res) => {
 export const handleRegister = async (req, res) => {
     const { name, email, password } = req.body
     const result = await authService.registerUser(name, email, password)
-    await res.completeIdempotency(201, { id: result.details.id })
-    AppResponse.success(res, result.details, result.message, 201)
+    AppResponse.success(res, result.details, result.message, result.code ?? 201)
 }
 
 export const handleVerifyEmail = async (req, res) => {

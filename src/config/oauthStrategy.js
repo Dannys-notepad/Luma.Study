@@ -3,6 +3,7 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20'
 import { userRepository } from '#database/repositories/index.js'
 import { startOfNextDay } from '#lib/dateHelpers.js'
 import AppError from '#lib/AppError.lib.js'
+import { AuthProvider } from '#constants/model.constant.js'
 import env from './env.js'
 
 passport.use(new GoogleStrategy(
@@ -13,35 +14,45 @@ passport.use(new GoogleStrategy(
     },
     async (accessToken, refreshToken, profile, done) => {
         try {
-            const freeAiCreditsResetsAt = startOfNextDay()
-            const payload = {
-                id: profile.id,
-                name: profile.displayName,
-                email: profile.emails?.[0]?.value,
-                avatarUrl: profile.photos?.[0]?.value ?? null,
-                authProvider: 'google',
+            const email = profile.emails?.[0]?.value?.toLowerCase().trim()
 
-                emailIsVerified: true,
-                freeAiCreditsResetsAt
+            if (!email) {
+                return done(AppError.badRequest('Google account has no email address'))
             }
 
-            let user = await userRepository.findById(payload.id)
+            const userId = userRepository.emailToId(email)
+
+            // 1. Look up by deterministic ID (email-derived).
+            let user = await userRepository.findById(userId)
             let isNewUser = false
 
-            if (user?.authProvider === 'email') {
-                return done(AppError.conflict('User already exists with this email and is registered with email/password. Please login with email/password instead.'))
+            // 2. Existing email/password account — reject Google login.
+            if (user && user.authProvider === AuthProvider.EMAIL) {
+                return done(AppError.conflict(
+                    'An account with this email already exists. Please log in with email and password instead.'
+                ))
             }
 
+            // 3. Create only if missing. Concurrent callbacks race here,
+            //    and createStrict rejects the loser with ALREADY_EXISTS → 409.
             if (!user) {
-                user = await userRepository.create(payload.id, payload)
-                if (!user) throw AppError.server('Error creating/fetching user')
+                const payload = {
+                    name: profile.displayName,
+                    email,
+                    googleId: profile.id,
+                    avatarUrl: profile.photos?.[0]?.value ?? null,
+                    authProvider: AuthProvider.GOOGLE,
+                    emailIsVerified: true,
+                    freeAiCreditsResetsAt: startOfNextDay()
+                }
+
+                user = await userRepository.createStrict(userId, payload)
                 isNewUser = true
             }
-             
-            done(null, { ...user, isNewUser })
 
+            return done(null, { ...user, isNewUser })
         } catch (error) {
-            done(error)
+            return done(error)
         }
     }
 ))
