@@ -19,9 +19,9 @@ const envSchema = z.object({
     MAILJET_API_SECRET: z.string().min(1, 'MAILJET_API_SECRET is required'),
     MAILJET_FROM_EMAIL: z.string().min(1, 'MAILJET_FROM_EMAIL is required'),
     MAILJET_FROM_NAME: z.string().default('Luma.Study'),
-    CLOUDINARY_CLOUD_NAME: z.string().min(1, 'CLOUDINARY_CLOUD_NAME is required'),
-    CLOUDINARY_API_KEY: z.string().min(1, 'CLOUDINARY_API_KEY is required'),
-    CLOUDINARY_API_SECRET: z.string().min(1, 'CLOUDINARY_API_SECRET is required')
+    // CLOUDINARY_CLOUD_NAME: z.string().min(1, 'CLOUDINARY_CLOUD_NAME is required'),
+    // CLOUDINARY_API_KEY: z.string().min(1, 'CLOUDINARY_API_KEY is required'),
+    // CLOUDINARY_API_SECRET: z.string().min(1, 'CLOUDINARY_API_SECRET is required')
 })
 
 const result = envSchema.safeParse(process.env)
