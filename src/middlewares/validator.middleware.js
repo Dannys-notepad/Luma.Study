@@ -41,3 +41,28 @@ export const validateQuery = (schema) => {
         next()
     }
 }
+
+export const validateFiles = (schema, { required = true } = {}) => {
+    return (req, res, next) => {
+        const files = req.files || []
+        if (files.length === 0 && required) {
+            return next(AppError.badRequest('No uploaded file provided'))
+        }
+
+        for (const file of files) {
+            const result = schema.safeParse(file)
+
+            if (!result.success) {
+                if (file.path && fs.existsSync(file.path)) {
+                    fs.unlink(file.path, (err) => {
+                        if (err) console.error('Failed to delete rejected upload', err)
+                    })
+                }
+
+                return next(AppError.badRequest('Invalid file', result.error.flatten().fieldErrors))
+            }
+        }
+
+        next()
+    }
+}
